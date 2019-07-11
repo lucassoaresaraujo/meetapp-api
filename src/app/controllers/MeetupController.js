@@ -1,5 +1,4 @@
 import * as Yup from 'yup';
-import { isBefore } from 'date-fns';
 
 import Meetup from '../models/Meetup';
 
@@ -59,12 +58,35 @@ class MeetupController {
         .json({ error: 'You can only change the meetups you created' });
     }
 
-    if (isBefore(meetup.date, new Date())) {
+    if (meetup.past) {
       return res.status(400).json({ error: 'Past meetups are not permitted' });
     }
 
     const meetupUpdated = await meetup.updaste(req.body);
     return res.json(meetupUpdated);
+  }
+
+  async delete(req, res) {
+    const { id } = req.params;
+    const { userId } = req;
+
+    const meetup = await Meetup.findOne({
+      where: { id, userId },
+    });
+
+    if (!meetup) {
+      return res
+        .status(401)
+        .json({ error: 'You can only cancel the meetups you created' });
+    }
+
+    if (meetup.past) {
+      return res.status(400).json({ error: "Can't delete past meetups" });
+    }
+
+    await meetup.destroy();
+
+    return res.status(200).send();
   }
 }
 
