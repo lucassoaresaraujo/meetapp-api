@@ -9,7 +9,6 @@ class User extends Model {
         email: Sequelize.STRING,
         password: Sequelize.VIRTUAL,
         passwordHash: Sequelize.STRING,
-        provider: Sequelize.BOOLEAN,
       },
       {
         sequelize,
@@ -23,6 +22,13 @@ class User extends Model {
     });
 
     return this;
+  }
+
+  static associate(models) {
+    this.belongsToMany(models.Meetup, {
+      as: 'subscribedMeetups',
+      through: 'subscriptions',
+    });
   }
 
   checkPassword(password) {
