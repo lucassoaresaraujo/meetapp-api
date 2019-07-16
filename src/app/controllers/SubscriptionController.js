@@ -6,8 +6,40 @@ import User from '../models/User';
 
 import Queue from '../../lib/Queue';
 import SubscriptionMail from '../jobs/SubscriptionMail';
+import File from '../models/File';
 
 class SubscriptionController {
+  async index(req, res) {
+    const { subscribedMeetups } = await User.findOne({
+      where: {
+        id: req.userId,
+      },
+      order: [[{ model: Meetup, as: 'subscribedMeetups' }, 'date', 'asc']],
+      include: [
+        {
+          as: 'subscribedMeetups',
+          model: Meetup,
+          attributes: ['id', 'title', 'description', 'location', 'date'],
+          where: {
+            date: {
+              [Op.gte]: new Date(),
+            },
+          },
+          through: {
+            attributes: ['createdAt'],
+          },
+          required: false,
+          include: {
+            model: File,
+            as: 'banner',
+            attributes: ['id', 'path', 'url'],
+          },
+        },
+      ],
+    });
+    return res.json(subscribedMeetups);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       meetupId: Yup.number().required(),
@@ -27,6 +59,7 @@ class SubscriptionController {
         },
       ],
     });
+
     const user = await User.findOne({
       where: { id: req.userId },
       attributes: ['id', 'name', 'email'],
